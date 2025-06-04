@@ -1,14 +1,37 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class Formulas : MonoBehaviour
 {
-    [SerializeField] private GraphHandler graph;
+    [SerializeField] public GraphHandler graph;
     [SerializeField] private MenuHandler menu;
-    // [SerializeField] private InputSanitizer inputSanitizer;
+    [SerializeField] private InputSanitizer inputSanitizer;
 
-    private float _probabilityValue = 0.5f;
+    // bernoulli
+    public float bernProbabilityValue = 0.5f;
+    
+    // unif {0, 1, ..., n - 1}
+    public int unifNValueN = 10;
+    
+    // unif {n, n + 1, ..., m}
+    public int unifNMValueN = 0;
+    public int unifNMValueM = 10;
+    
+    // unif [a, b)
+    public float unifStartA = 0;
+    public float unifEndB = 10;
+    
+    // binomial
+    public int binomialValueN = 10;
+    public float binomialProbabilityValue = 0.5f;
+    
+    // geometric
+    public float geometricProbabilityValue = 0.5f;
+    
+    // exponential
+    public float exponentialTheta = 1.2f;
     
     // TODO: FIX THIS SHIT
     private double[] Urand(int n)
@@ -37,8 +60,8 @@ public class Formulas : MonoBehaviour
 
     public Vector2 NormalDistribution()
     {
-        var u1 = Random.value;
-        var u2 = Random.value;
+        float u1 = Random.value;
+        float u2 = Random.value;
         // Debug.Log($"{u1} & {u2}");
         
         var z1 = Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2);
@@ -49,14 +72,62 @@ public class Formulas : MonoBehaviour
 
     public Vector2 BernoulliDistribution()
     {
-        var u1 = Random.value;
-        int result = u1 < _probabilityValue ? 1 : 0;
+        float u = Random.value;
+        int result = u < bernProbabilityValue ? 1 : 0;
         
         return new Vector2(result, 0);
     }
-    
-    public void UpdateProbability(float newProbability)
+
+    public Vector2 UniformDistribution0ToN()
     {
-        _probabilityValue = newProbability;
+        float u = Random.value;
+        int result = (int)(unifNValueN * u);
+        
+        return new Vector2(result, 0);
+    }
+
+    public Vector2 UniformDistributionNToM()
+    {
+        float u = Random.value;
+        int result = unifNMValueN + (int)((unifNMValueM - unifNMValueN + 1) * u);
+        
+        return new Vector2(result, 0);
+    }
+
+    public Vector2 UniformDistributionInterval()
+    {
+        float u = Random.value;
+        float result = unifStartA + (unifEndB - unifStartA) * u;
+
+        return new Vector2(result, 0);
+    }
+
+    public Vector2 BinomialDistribution()
+    {
+        int sum = 0;
+        for (int i = 0; i < binomialValueN; i++)
+        {
+            float u = Random.value;
+            sum += u < binomialProbabilityValue ? 1 : 0;
+        }
+
+        return new Vector2(sum, 0);
+    }
+
+    public Vector2 GeometricDistribution()
+    {
+        float u = Random.value;
+        int result = (int)(Mathf.Log(1 - u) / Mathf.Log(1 - geometricProbabilityValue)) + 1;
+        
+        return new Vector2(result, 0);
+    }
+
+    public Vector2 ExponentialDistribution()
+    {
+        float u = Random.value;
+        float result = -exponentialTheta * Mathf.Log(1 - u);
+        
+        return new Vector2(result, 0);
     }
 }
+

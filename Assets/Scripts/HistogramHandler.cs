@@ -19,7 +19,7 @@ public class HistogramHandler : MonoBehaviour
         
         CreateHistogramBars();
 
-        if (!graphComponent._isHistogramSelected)
+        if (!graphComponent.isHistogramSelected)
         {
             gameObject.SetActive(false);    
         }
@@ -34,7 +34,7 @@ public class HistogramHandler : MonoBehaviour
         
         for (float i = -_xAxisMax; i < _xAxisMax; i += binWidth)
         {
-            var lineObj = new GameObject($"bin idk");
+            var lineObj = new GameObject($"Bin {i}");
             lineObj.transform.SetParent(transform);
             lineObj.transform.localPosition = Vector3.zero;
 

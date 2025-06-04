@@ -1,8 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
-using JetBrains.Annotations;
 using UnityEngine;
 using TMPro;
 using UnityEngine.Serialization;
@@ -39,7 +37,7 @@ public class GraphHandler : MonoBehaviour
     [SerializeField] public float pointPosOffset = -1f;
 
     [Header("Formulas")] 
-    [SerializeField] private Formulas formulas;
+    [SerializeField] public Formulas formulas;
     [SerializeField] private RawImage image;
     
     [Header("Plot slider")]
@@ -53,16 +51,19 @@ public class GraphHandler : MonoBehaviour
     [SerializeField] private HistogramHandler histogram;
     [SerializeField] private TextMeshProUGUI selectedButtonArrow;
 
+    public delegate Vector2 DistributionFunction();
+    public DistributionFunction CurrentDistribution;
+
     private GameObject _xAxisGameObj;
     private GameObject _yAxisGameObj;
     
-    public List<Vector2> _points = new List<Vector2>();
+    public List<Vector2> points = new List<Vector2>();
     private Texture2D _texture;
     
     // private float _probabilityPlaceholderValue = 0.5f;
     private static int _textureSize = 512;
     private int _totalPlottedNumber;
-    public bool _isHistogramSelected;
+    public bool isHistogramSelected;
     
     public void Awake()
     {
@@ -228,7 +229,7 @@ public class GraphHandler : MonoBehaviour
         _texture.SetPixels(clearPixels);
         _texture.Apply();
         image.texture = _texture;
-        if (!_isHistogramSelected)
+        if (!isHistogramSelected)
             image.gameObject.SetActive(true);
 
         StopAllCoroutines();
@@ -238,13 +239,15 @@ public class GraphHandler : MonoBehaviour
         AnimateYAxis();
         StartCoroutine(AnimateXAxisPoints());
         StartCoroutine(AnimateYAxisPoints());
+
+        // Callback distributionFunctionCallback = DistributionFunction;
         histogram.Start();
     }
     
     public void ResetGraph()
     {
         histogram.ResetHistogramBars();
-        _points.Clear();
+        points.Clear();
         
         _totalPlottedNumber = 0;
         totalPlottedText.text = "Total points plotted: 0";
@@ -263,18 +266,24 @@ public class GraphHandler : MonoBehaviour
     {
         int pointsToPlot = (int)plotSlider.value;
         
-        for (int i = 0; i <= pointsToPlot; i++)
+        for (int i = 1; i <= pointsToPlot; i++)
         {
-            Vector2 pos = formulas.BernoulliDistribution();
+            // assumes (0, 0) if the function doesnt exist
+            Vector2 pos = CurrentDistribution?.Invoke() ?? Vector2.zero;
             
-            _points.Add(pos);
+            points.Add(pos);
 
             int x = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.x) * (_textureSize - 1));
             int y = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.y) * (_textureSize - 1));
             _texture.SetPixel(x, y, Color.red);
             
-            float normalized = Mathf.InverseLerp(-xAxisMaxExtent, xAxisMaxExtent, pos.x);
-            int index = Mathf.Clamp(Mathf.FloorToInt(normalized * histogram.binSize), 0, histogram.binSize - 1);
+            float rangeMin = -xAxisMaxExtent;
+            float rangeMax = xAxisMaxExtent;
+            float range = rangeMax - rangeMin;
+            float binWidth = range / histogram.binSize;
+
+            int index = Mathf.Clamp(Mathf.RoundToInt((pos.x - rangeMin) / binWidth), 0, histogram.binSize - 1);
+
             histogram.binFrequency[index]++;
             
             if (i % (pointsToPlot / 100) == 0)
@@ -282,7 +291,7 @@ public class GraphHandler : MonoBehaviour
                 _texture.Apply();
                 totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber + i}";
                 
-                histogram.UpdateHistogramBars(_points);
+                histogram.UpdateHistogramBars(points);
                 
                 yield return new WaitForFixedUpdate();
             }
@@ -294,7 +303,7 @@ public class GraphHandler : MonoBehaviour
         _totalPlottedNumber += pointsToPlot;
         totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber}";
         
-        histogram.UpdateHistogramBars(_points);
+        histogram.UpdateHistogramBars(points);
     }
 
     public void UpdateSliderTextValue()
@@ -304,7 +313,7 @@ public class GraphHandler : MonoBehaviour
 
     public void ViewPlots()
     {
-        if (_isHistogramSelected)
+        if (isHistogramSelected)
         {
             distributionCanvas.SetActive(true);
             histogram.gameObject.SetActive(false);
@@ -313,13 +322,13 @@ public class GraphHandler : MonoBehaviour
             var height = selectedButtonArrow.rectTransform.rect.height;
             selectedButtonArrow.rectTransform.sizeDelta = new Vector2(width, height + 357f);
 
-            _isHistogramSelected = false;
+            isHistogramSelected = false;
         }
     }
 
     public void ViewHistogram()
     {
-        if (!_isHistogramSelected)
+        if (!isHistogramSelected)
         {
             distributionCanvas.SetActive(false);
             histogram.gameObject.SetActive(true);
@@ -328,7 +337,7 @@ public class GraphHandler : MonoBehaviour
             var height = selectedButtonArrow.rectTransform.rect.height;
             selectedButtonArrow.rectTransform.sizeDelta = new Vector2(width, height - 357f);
             
-            _isHistogramSelected = true;
+            isHistogramSelected = true;
         }
     }
 

@@ -1,11 +1,8 @@
-using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using DG.Tweening;
-using UnityEditor.Rendering;
 using UnityEngine.EventSystems;
-using System.Text.RegularExpressions;
 
 public class MenuHandler : MonoBehaviour
 {
@@ -22,6 +19,7 @@ public class MenuHandler : MonoBehaviour
     
     [Header("Animation variables")]
     [SerializeField] private float animationDuration = 0.5f;
+    [SerializeField] private CameraHandler cameraScroller;
 
     [Header("Other canvas")] 
     [SerializeField] private GameObject graphCanvas;
@@ -63,7 +61,6 @@ public class MenuHandler : MonoBehaviour
     private float _boxWidth;
     private float _initialBoxPosition;
     private float _initialButtonsPosition;
-
     
     private void Start()
     {
@@ -94,8 +91,8 @@ public class MenuHandler : MonoBehaviour
         SetAxisWidth(graphHandler.xAxis, axisWidthNormal);
         SetAxisWidth(graphHandler.yAxis, axisWidthNormal);
         
-        SetAxisArrowFont(xArrow, 24f, 17f);
-        SetAxisArrowFont(yArrow, 24f, 17f);
+        SetAxisArrowFont(xArrow, 12f, 8.5f);
+        SetAxisArrowFont(yArrow, 12f, 8.5f);
 
         camera.orthographicSize = graphHandler.yAxisMaxExtent + cameraOffsetNormal;
         origin.fontSize = originSizeNormal;
@@ -103,6 +100,8 @@ public class MenuHandler : MonoBehaviour
         
         graphHandler.ResetGraph();
         graphHandler.ViewPlots();
+
+        graphHandler.CurrentDistribution = graphHandler.formulas.NormalDistribution;
         EnableCorrectCanvas("Normal");
     }
     
@@ -124,8 +123,8 @@ public class MenuHandler : MonoBehaviour
         SetAxisWidth(graphHandler.xAxis, axisWidthBern);
         SetAxisWidth(graphHandler.yAxis, axisWidthBern);
         
-        SetAxisArrowFont(xArrow, 12f, 8.5f);
-        SetAxisArrowFont(yArrow, 12f, 8.5f);
+        SetAxisArrowFont(xArrow, 24f, 17f);
+        SetAxisArrowFont(yArrow, 24f, 17f);
         
         camera.orthographicSize = graphHandler.yAxisMaxExtent + cameraOffsetBern;
         origin.fontSize = originSizeBern;
@@ -133,7 +132,64 @@ public class MenuHandler : MonoBehaviour
         
         graphHandler.ResetGraph();
         graphHandler.ViewHistogram();
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.BernoulliDistribution;
         EnableCorrectCanvas("Bernoulli");
+    }
+
+    public void InitUniformDistribution0ToN()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Uniform0N");
+
+        graphHandler.CurrentDistribution = graphHandler.formulas.UniformDistribution0ToN;
+    }
+
+    public void InitUniformDistributionNToM()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("UniformNM");
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.UniformDistributionNToM;
+    }
+
+    public void InitUniformDistributionInterval()
+    {
+        InitBernoulliDistribution();
+        
+        histogramHandler.binSize = histogramBinsNormal;
+        histogramHandler.heightMultiplier = histogramHeightMultiplierNormal;
+        histogramGraphCanvas.SetActive(false);
+        
+        graphHandler.ResetGraph();
+        graphHandler.ViewHistogram();
+        graphHandler.CurrentDistribution = graphHandler.formulas.UniformDistributionInterval;
+        
+        EnableCorrectCanvas("Uniform[ab)");
+    }
+
+    public void InitBinomialDistribution()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Binomial Distribution");
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.BinomialDistribution;
+    }
+
+    public void InitGeometricDistribution()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Geometric Distribution");
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.GeometricDistribution;
+    }
+
+    public void InitExponentialDistribution()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Exponential Distribution");
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.ExponentialDistribution;
     }
 
     private void SetAxisWidth(LineRenderer line, float width)
@@ -168,6 +224,7 @@ public class MenuHandler : MonoBehaviour
             DisableButtons();
             
             _isOpenSideMenu = true;
+            cameraScroller.enabled = false;
         }
         else
         {
@@ -178,6 +235,7 @@ public class MenuHandler : MonoBehaviour
             StartCoroutine(EnableButtons());
             
             _isOpenSideMenu = false;
+            cameraScroller.enabled = true;
         }
         
         // deselect all buttons because the unity buttons are dumb
@@ -225,5 +283,4 @@ public class MenuHandler : MonoBehaviour
             }
         }
     }
-    
 }
