@@ -1,0 +1,76 @@
+# Ignore the entire Library, Temp, and Logs folders
+Library/
+Assets/Sprites/
+Temp/
+Logs/
+Obj/
+UserSettings/
+
+# Ignore build results
+Build/
+Builds/
+[Bb]uild/
+[Bb]uilds/
+ExportedObj/
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.exe
+*.ipa
+*.xcodeproj/
+*.xcworkspace/
+
+# Ignore crash reports
+CrashReports/
+MemoryCaptures/
+
+# Ignore local project settings
+*.pidb
+*.suo
+*.user
+*.userprefs
+*.csproj
+*.unityproj
+*.sln
+*.tmproj
+*.vsp
+*.vspx
+*.vcxproj
+*.pdb
+
+# Ignore the .vs folder (Visual Studio)
+.vs/
+
+# Ignore Rider files
+.idea/
+*.iml
+
+# Ignore log files
+*.log
+*.tlog
+
+# Ignore Unity-generated meta files
+*.pidb
+*.svd
+*.mdb
+*.pdb
+
+# Ignore Packages folder (Unity regenerates this)
+Packages/
+
+# Ignore auto-generated files
+obj/
+*.ilk
+*.exp
+*.iobj
+*.ipdb
+*.sdf
+*.tlog
+
+# Ignore Lightmap and Cache files
+LightmapSnapshot
+AssetBundleGraph/
+
+# Prevent line-ending normalizations
+* -text

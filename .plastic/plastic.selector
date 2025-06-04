@@ -1,0 +1,4 @@
+repository "Prob. Distr. Simulator 2/Prob. Distr. Simulator 2@7972451341659@cloud"
+  path "/"
+    br "/main"
+    co "/main"
