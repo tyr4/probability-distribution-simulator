@@ -21,7 +21,7 @@ public class InputSanitizer : MonoBehaviour
     {
         _patternProbability = @"[a-zA-Z,!@#$%^&*()_+\-=\\\/]|^[2-9]|^1\.|(?<=\.)\.{1,}";
         _patternInteger = @"^(?![0-9]*$).*";
-        _patternFloat = @"^(?![0-9]*$)*";
+        _patternFloat = @"^(?!-*[0-9]*\.*[0-9]*$).*";
 
         if (inputField != null)
         {
@@ -52,6 +52,11 @@ public class InputSanitizer : MonoBehaviour
             case "NUnif2 Input":
             case "MUnif2 Input":
             case "Theta Input":
+            case "Lambda Input":
+            case "A Input":
+            case "B Input":
+            case "C Input":
+            case "D Input":
                 sanitized = Regex.Replace(input, _patternFloat, string.Empty);
                 break;
         }
@@ -66,7 +71,7 @@ public class InputSanitizer : MonoBehaviour
             float probabilityResult = 0;
             int unifResult = 0;
             float unifIntervalResult = 0;
-            float theta = 0;
+            float rate = 0;
             
             // a first switch for sanitizing values
             switch (transform.parent.name)
@@ -77,36 +82,46 @@ public class InputSanitizer : MonoBehaviour
                     probabilityResult = (float)Convert.ToDouble(input);
                     probabilityResult = Mathf.Min(probabilityResult, 1);
                     
-                    // take the minimum and modify the field accordingly
                     inputField.SetTextWithoutNotify(Convert.ToString(probabilityResult, CultureInfo.InvariantCulture));
                     break;
                 
-                case "NUnif1 Input":
                 case "NUnif0 Input":
                 case "NBin Input":
-                case "MUnif1 Input":
                     unifResult = Convert.ToInt32(input);
-                    unifResult = Mathf.Min(unifResult, (int)(formulas.graph.xAxisMaxExtent));
-                    unifResult = Mathf.Max(unifResult, -(int)(formulas.graph.xAxisMaxExtent));
+                    unifResult = Mathf.Min(unifResult, (int)(formulas.graph.xAxisMaxExtent) - 1);
+                    unifResult = Mathf.Max(unifResult, -(int)(formulas.graph.xAxisMaxExtent) + 1);
                     
-                    // take the minimum and modify the field accordingly
+                    inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
+                    break;
+                
+                case "NUnif1 Input":
+                case "MUnif1 Input":
+                case "A Input":
+                case "B Input":
+                case "C Input":
+                case "D Input":
+                    unifResult = Convert.ToInt32(input);
+                    unifResult = Mathf.Min(unifResult, (int)(formulas.graph.xAxisMaxExtent) - 1);
+                    unifResult = Mathf.Max(unifResult, -(int)(formulas.graph.xAxisMaxExtent) + 1);
+                    
                     inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
                     break;
                 
                 case "NUnif2 Input":
                 case "MUnif2 Input":
                     unifIntervalResult = (float)Convert.ToDouble(input);
-                    unifIntervalResult = Mathf.Min(unifIntervalResult, formulas.graph.xAxisMaxExtent);
-                    unifIntervalResult = Mathf.Max(unifIntervalResult, -formulas.graph.xAxisMaxExtent);
+                    unifIntervalResult = Mathf.Min(unifIntervalResult, formulas.graph.xAxisMaxExtent - 1);
+                    unifIntervalResult = Mathf.Max(unifIntervalResult, -formulas.graph.xAxisMaxExtent + 1);
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(unifIntervalResult, CultureInfo.InvariantCulture));
                     break;
                 
                 case "Theta Input":
-                    theta = (float)Convert.ToDouble(input);
-                    theta = Mathf.Max(0, theta);
+                case "Lambda Input":
+                    rate = (float)Convert.ToDouble(input);
+                    rate = Mathf.Max(0, rate);
                     
-                    inputField.SetTextWithoutNotify(Convert.ToString(unifIntervalResult, CultureInfo.InvariantCulture));
+                    inputField.SetTextWithoutNotify(Convert.ToString(rate, CultureInfo.InvariantCulture));
                     break;
             }
             
@@ -126,7 +141,10 @@ public class InputSanitizer : MonoBehaviour
                     break;
                 
                 case "Theta Input":
-                    formulas.exponentialTheta = theta;
+                    formulas.exponentialTheta = rate;
+                    break;
+                case "Lambda Input":
+                    formulas.poissonLambda = rate;
                     break;
                     
                 case "NUnif0 Input":
@@ -147,6 +165,19 @@ public class InputSanitizer : MonoBehaviour
                     break;
                 case "MUnif2 Input":
                     formulas.unifEndB = unifIntervalResult;
+                    break;
+                
+                case "A Input":
+                    formulas.rectA = unifResult;
+                    break;
+                case "B Input":
+                    formulas.rectB = unifResult;
+                    break;
+                case "C Input":
+                    formulas.rectC = unifResult;
+                    break;
+                case "D Input":
+                    formulas.rectD = unifResult;
                     break;
             }
         }

@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class GraphHandler : MonoBehaviour
 {
     [Header("Graph variables")] 
-    [SerializeField] private Material lineMaterial;
+    [SerializeField] public Material lineMaterial;
     [SerializeField] private Material drawMaterial;
     [SerializeField] public LineRenderer xAxis;
     [SerializeField] public LineRenderer yAxis;
@@ -19,7 +19,8 @@ public class GraphHandler : MonoBehaviour
     [SerializeField] public float xArrowOffset = 7f;
     [SerializeField] public float yArrowOffset = 5f;
     [SerializeField] private Sprite circleSprite;
-    [SerializeField] private GameObject distributionCanvas;
+    [SerializeField] public GameObject distributionPlotCanvasImage;
+    [SerializeField] private Canvas distributionPlotCanvasParent;
 
     [Header("Animation settings")] 
     [SerializeField] public float xAxisMaxExtent = 28f;
@@ -70,34 +71,35 @@ public class GraphHandler : MonoBehaviour
         _xAxisGameObj = xAxis.transform.gameObject;
         _yAxisGameObj = yAxis.transform.gameObject;
         plotSliderText.text = $"Points to simulate: {plotSlider.value}";
+        
+        distributionPlotCanvasParent.renderMode = RenderMode.WorldSpace;
     }
     
+    
     #region Axis Animations
-
-    // TODO: add a param to this to accept a max size instead of the serialized field
-    private void AnimateXAxis()
+    
+    public void AnimateXAxis(LineRenderer line, float start, float end, float yPos)
     {
-        float currentExtent = -xAxisMaxExtent;
-        xAxis.SetPosition(0, new Vector3(currentExtent, 0, 0));
+        float currentExtent = start;
+        line.SetPosition(0, new Vector3(currentExtent, yPos, 0));
 
         DOTween.To(() => currentExtent, val =>
         {
             currentExtent = val;
-            xAxis.SetPosition(1, new Vector3(currentExtent, 0, 0));
-        }, xAxisMaxExtent, lineAnimationDuration).SetEase(Ease.Linear);
+            line.SetPosition(1, new Vector3(currentExtent, yPos, 0));
+        }, end, lineAnimationDuration).SetEase(Ease.Linear);
     }
-
-    // TODO: add a param to this to accept a max size instead of the serialized field
-    private void AnimateYAxis()
+    
+    public void AnimateYAxis(LineRenderer line, float start, float end, float xPos)
     {
-        float currentExtent = -yAxisMaxExtent;
-        yAxis.SetPosition(0, new Vector3(0, currentExtent, 0));
+        float currentExtent = start;
+        line.SetPosition(0, new Vector3(xPos, currentExtent, 0));
 
         DOTween.To(() => currentExtent, val =>
         {
             currentExtent = val;
-            yAxis.SetPosition(1, new Vector3(0, currentExtent, 0));
-        }, yAxisMaxExtent, lineAnimationDuration).SetEase(Ease.Linear);
+            line.SetPosition(1, new Vector3(xPos, currentExtent, 0));
+        }, end, lineAnimationDuration).SetEase(Ease.Linear);
     }
 
     private IEnumerator AnimateXAxisPoints()
@@ -235,8 +237,8 @@ public class GraphHandler : MonoBehaviour
         StopAllCoroutines();
         CleanAxisPoints();
 
-        AnimateXAxis();
-        AnimateYAxis();
+        AnimateXAxis(xAxis, -xAxisMaxExtent, xAxisMaxExtent, 0);
+        AnimateYAxis(yAxis, -yAxisMaxExtent, yAxisMaxExtent, 0);
         StartCoroutine(AnimateXAxisPoints());
         StartCoroutine(AnimateYAxisPoints());
 
@@ -251,8 +253,6 @@ public class GraphHandler : MonoBehaviour
         
         _totalPlottedNumber = 0;
         totalPlottedText.text = "Total points plotted: 0";
-        
-        // formulas.UpdateProbability(_probabilityPlaceholderValue);
         
         InitGraph();
     }
@@ -315,7 +315,7 @@ public class GraphHandler : MonoBehaviour
     {
         if (isHistogramSelected)
         {
-            distributionCanvas.SetActive(true);
+            distributionPlotCanvasImage.SetActive(true);
             histogram.gameObject.SetActive(false);
 
             var width = selectedButtonArrow.rectTransform.rect.width;
@@ -330,7 +330,7 @@ public class GraphHandler : MonoBehaviour
     {
         if (!isHistogramSelected)
         {
-            distributionCanvas.SetActive(false);
+            distributionPlotCanvasImage.SetActive(false);
             histogram.gameObject.SetActive(true);
             
             var width = selectedButtonArrow.rectTransform.rect.width;

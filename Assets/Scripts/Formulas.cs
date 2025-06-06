@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
@@ -7,7 +9,6 @@ public class Formulas : MonoBehaviour
 {
     [SerializeField] public GraphHandler graph;
     [SerializeField] private MenuHandler menu;
-    [SerializeField] private InputSanitizer inputSanitizer;
 
     // bernoulli
     public float bernProbabilityValue = 0.5f;
@@ -32,6 +33,15 @@ public class Formulas : MonoBehaviour
     
     // exponential
     public float exponentialTheta = 1.2f;
+    
+    // poisson
+    public float poissonLambda = 0.5f;
+    
+    // rectangle simulation
+    public float rectA = -2;
+    public float rectB = 2;
+    public float rectC = -1;
+    public float rectD = 1;
     
     // TODO: FIX THIS SHIT
     private double[] Urand(int n)
@@ -128,6 +138,32 @@ public class Formulas : MonoBehaviour
         float result = -exponentialTheta * Mathf.Log(1 - u);
         
         return new Vector2(result, 0);
+    }
+    
+    public Vector2 PoissonDistribution()
+    {
+        float L = Mathf.Exp(-poissonLambda);
+        int k = 0;
+        float p = 1f;
+
+        do
+        {
+            k++;
+            p *= Random.value;
+        } while (p > L);
+        
+        return new Vector2(k - 1, 0);
+    }
+
+    public Vector2 RectangleSimulation()
+    {
+        float u1 = Random.value;
+        float u2 = Random.value;
+        
+        float x = rectA + (rectB - rectA) * u1;
+        float y = rectC + (rectD - rectC) * u2;
+        
+        return new Vector2(x, y);
     }
 }
 

@@ -56,11 +56,18 @@ public class MenuHandler : MonoBehaviour
     [SerializeField] private float axisWidthBern = 0.125f;
     [SerializeField] private int histogramBinsBern = 14;
     [SerializeField] private float histogramHeightMultiplierBern = 5f;
+    [SerializeField] private float lineWidthBern = 0.1f;
     
     private bool _isOpenSideMenu = false;
     private float _boxWidth;
     private float _initialBoxPosition;
     private float _initialButtonsPosition;
+    
+    private LineRenderer _bottomLine;
+    private LineRenderer _topLine;
+    private LineRenderer _leftLine;
+    private LineRenderer _rightLine;
+    
     
     private void Start()
     {
@@ -69,6 +76,13 @@ public class MenuHandler : MonoBehaviour
         _boxWidth = box.rect.width;
         _initialBoxPosition = box.rect.position.x;
         _initialButtonsPosition = menuSideButtons.transform.position.x;
+
+        // initialize the line renderers for the rectangle simulations
+        CreateLines();
+        SetLineMaterials();
+        SetLineParents();
+        SetLineWidth();
+        SetLineColor();
         
         InitBernoulliDistribution();
     }
@@ -171,7 +185,7 @@ public class MenuHandler : MonoBehaviour
     public void InitBinomialDistribution()
     {
         InitBernoulliDistribution();
-        EnableCorrectCanvas("Binomial Distribution");
+        EnableCorrectCanvas("Binomial");
         
         graphHandler.CurrentDistribution = graphHandler.formulas.BinomialDistribution;
     }
@@ -179,7 +193,7 @@ public class MenuHandler : MonoBehaviour
     public void InitGeometricDistribution()
     {
         InitBernoulliDistribution();
-        EnableCorrectCanvas("Geometric Distribution");
+        EnableCorrectCanvas("Geometric");
         
         graphHandler.CurrentDistribution = graphHandler.formulas.GeometricDistribution;
     }
@@ -187,11 +201,86 @@ public class MenuHandler : MonoBehaviour
     public void InitExponentialDistribution()
     {
         InitBernoulliDistribution();
-        EnableCorrectCanvas("Exponential Distribution");
+        EnableCorrectCanvas("Exponential");
         
         graphHandler.CurrentDistribution = graphHandler.formulas.ExponentialDistribution;
     }
 
+    public void InitPoissonDistribution()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Poisson");
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.PoissonDistribution;
+    }
+
+    public void InitRectangleSimulation()
+    {
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Rectangle");
+
+        AnimateRectLines();
+        
+        histogramHandler.gameObject.SetActive(false);
+        graphHandler.distributionPlotCanvasImage.gameObject.SetActive(true);
+        
+        graphHandler.CurrentDistribution = graphHandler.formulas.RectangleSimulation;
+    }
+
+    private void AnimateRectLines()
+    {
+        Formulas f = graphHandler.formulas;
+        float offset = lineWidthBern / 2;
+        
+        graphHandler.AnimateXAxis(_bottomLine, f.rectA - offset, f.rectB + offset, f.rectC);
+        graphHandler.AnimateXAxis(_topLine, f.rectA - offset, f.rectB + offset, f.rectD);
+        
+        graphHandler.AnimateYAxis(_leftLine, f.rectC - offset, f.rectD + offset, f.rectA);
+        graphHandler.AnimateYAxis(_rightLine, f.rectC - offset, f.rectD + offset, f.rectB);
+    }
+
+    private void CreateLines()
+    {
+        _bottomLine = new GameObject().AddComponent<LineRenderer>();
+        _topLine = new GameObject().AddComponent<LineRenderer>();
+        _leftLine = new GameObject().AddComponent<LineRenderer>();
+        _rightLine = new GameObject().AddComponent<LineRenderer>();
+    }
+
+    private void SetLineMaterials()
+    {
+        _bottomLine.material = graphHandler.lineMaterial;
+        _topLine.material = graphHandler.lineMaterial;
+        _leftLine.material = graphHandler.lineMaterial;
+        _rightLine.material = graphHandler.lineMaterial;
+    }
+
+    private void SetLineParents()
+    {
+        Transform graphTransform = graphHandler.transform;
+        
+        _bottomLine.transform.SetParent(graphTransform);
+        _topLine.transform.SetParent(graphTransform);
+        _leftLine.transform.SetParent(graphTransform);
+        _rightLine.transform.SetParent(graphTransform);
+    }
+
+    private void SetLineWidth()
+    {
+        _bottomLine.startWidth = _bottomLine.endWidth = lineWidthBern;
+        _topLine.startWidth = _topLine.endWidth = lineWidthBern;
+        _leftLine.startWidth = _leftLine.endWidth = lineWidthBern;
+        _rightLine.startWidth = _rightLine.endWidth = lineWidthBern;
+    }
+
+    private void SetLineColor()
+    {
+        _bottomLine.startColor = _bottomLine.endColor = Color.grey;
+        _topLine.startColor = _topLine.endColor = Color.grey;
+        _leftLine.startColor = _leftLine.endColor = Color.grey;
+        _rightLine.startColor = _rightLine.endColor = Color.grey;
+    }
+    
     private void SetAxisWidth(LineRenderer line, float width)
     {
         line.startWidth = width;
