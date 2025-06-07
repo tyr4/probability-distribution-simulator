@@ -3,12 +3,13 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class InputSanitizer : MonoBehaviour
 {
     [Header("Text variables")] 
     [SerializeField] public TMP_InputField inputField;
-    [SerializeField] private Formulas formulas;
+    [SerializeField] private Formulas f;
     
     [SerializeField] private TMP_InputField unifNMValueN;
     [SerializeField] private TMP_InputField unifNMValueM;
@@ -20,7 +21,7 @@ public class InputSanitizer : MonoBehaviour
     private void Start()
     {
         _patternProbability = @"[a-zA-Z,!@#$%^&*()_+\-=\\\/]|^[2-9]|^1\.|(?<=\.)\.{1,}";
-        _patternInteger = @"^(?![0-9]*$).*";
+        _patternInteger = @"^(?!-*[0-9]*$).*";
         _patternFloat = @"^(?!-*[0-9]*\.*[0-9]*$).*";
 
         if (inputField != null)
@@ -57,6 +58,13 @@ public class InputSanitizer : MonoBehaviour
             case "B Input":
             case "C Input":
             case "D Input":
+            case "CX0 Input":
+            case "CY0 Input":
+            case "R Input":
+            case "EX0 Input":
+            case "EY0 Input":
+            case "EllipseA Input":
+            case "EllipseB Input":
                 sanitized = Regex.Replace(input, _patternFloat, string.Empty);
                 break;
         }
@@ -86,10 +94,17 @@ public class InputSanitizer : MonoBehaviour
                     break;
                 
                 case "NUnif0 Input":
+                    unifResult = Convert.ToInt32(input);
+                    unifResult = Mathf.Min(unifResult, (int)(f.graph.xAxisMaxExtent) - 1);
+                    unifResult = Mathf.Max(unifResult, 0);
+                    
+                    inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
+                    break;
+                
                 case "NBin Input":
                     unifResult = Convert.ToInt32(input);
-                    unifResult = Mathf.Min(unifResult, (int)(formulas.graph.xAxisMaxExtent) - 1);
-                    unifResult = Mathf.Max(unifResult, -(int)(formulas.graph.xAxisMaxExtent) + 1);
+                    unifResult = Mathf.Min(unifResult, (int)(f.graph.xAxisMaxExtent) - 1);
+                    unifResult = Mathf.Max(unifResult, -(int)(f.graph.xAxisMaxExtent) + 1);
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
                     break;
@@ -101,17 +116,22 @@ public class InputSanitizer : MonoBehaviour
                 case "C Input":
                 case "D Input":
                     unifResult = Convert.ToInt32(input);
-                    unifResult = Mathf.Min(unifResult, (int)(formulas.graph.xAxisMaxExtent) - 1);
-                    unifResult = Mathf.Max(unifResult, -(int)(formulas.graph.xAxisMaxExtent) + 1);
+                    unifResult = Mathf.Min(unifResult, (int)(f.graph.xAxisMaxExtent) - 1);
+                    unifResult = Mathf.Max(unifResult, -(int)(f.graph.xAxisMaxExtent) + 1);
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
                     break;
                 
                 case "NUnif2 Input":
                 case "MUnif2 Input":
+                case "CX0 Input":
+                case "CY0 Input":
+                case "R Input":
+                case "EX0 Input":
+                case "EY0 Input":
                     unifIntervalResult = (float)Convert.ToDouble(input);
-                    unifIntervalResult = Mathf.Min(unifIntervalResult, formulas.graph.xAxisMaxExtent - 1);
-                    unifIntervalResult = Mathf.Max(unifIntervalResult, -formulas.graph.xAxisMaxExtent + 1);
+                    unifIntervalResult = Mathf.Min(unifIntervalResult, f.graph.xAxisMaxExtent - 1);
+                    unifIntervalResult = Mathf.Max(unifIntervalResult, -f.graph.xAxisMaxExtent + 1);
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(unifIntervalResult, CultureInfo.InvariantCulture));
                     break;
@@ -123,61 +143,154 @@ public class InputSanitizer : MonoBehaviour
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(rate, CultureInfo.InvariantCulture));
                     break;
+                
+                case "EllipseA Input":
+                case "EllipseB Input":
+                    unifIntervalResult = (float)Convert.ToDouble(input);
+                    unifIntervalResult = Mathf.Min(unifIntervalResult, f.graph.xAxisMaxExtent - 1);
+                    unifIntervalResult = Mathf.Max(unifIntervalResult, -f.graph.xAxisMaxExtent + 1);
+                    unifIntervalResult = unifIntervalResult == 0? 1 : unifIntervalResult;
+                    
+                    inputField.SetTextWithoutNotify(Convert.ToString(unifIntervalResult, CultureInfo.InvariantCulture));
+                    break;
             }
             
             // a 2nd switch for assigning values, yes i need it
             switch (transform.parent.name)
             {
                 case "PBern Input":
-                    formulas.bernProbabilityValue = probabilityResult;
+                    f.bernProbabilityValue = probabilityResult;
                     break;
 
                 case "PBin Input":
-                    formulas.binomialProbabilityValue = probabilityResult;
+                    f.binomialProbabilityValue = probabilityResult;
                     break;
                 
                 case "PGeom Input":
-                    formulas.geometricProbabilityValue = probabilityResult;
+                    f.geometricProbabilityValue = probabilityResult;
                     break;
                 
                 case "Theta Input":
-                    formulas.exponentialTheta = rate;
+                    f.exponentialTheta = rate;
                     break;
                 case "Lambda Input":
-                    formulas.poissonLambda = rate;
+                    f.poissonLambda = rate;
                     break;
                     
                 case "NUnif0 Input":
-                    formulas.unifNValueN = unifResult;
+                    f.unifNValueN = unifResult;
                     break;
                 case "NUnif1 Input":
-                    formulas.unifNMValueN = unifResult;
+                    f.unifNMValueN = unifResult;
                     break;
                 case "NUnif2 Input":
-                    formulas.unifStartA = unifIntervalResult;
+                    f.unifStartA = unifIntervalResult;
                     break;
                 case "NBin Input":
-                    formulas.binomialValueN = unifResult;
+                    f.binomialValueN = unifResult;
                     break;
                 
                 case "MUnif1 Input":
-                    formulas.unifNMValueM = unifResult;
+                    f.unifNMValueM = unifResult;
                     break;
                 case "MUnif2 Input":
-                    formulas.unifEndB = unifIntervalResult;
+                    f.unifEndB = unifIntervalResult;
                     break;
                 
                 case "A Input":
-                    formulas.rectA = unifResult;
+                    f.rectA = unifResult;
+                    f.menu.AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
                     break;
                 case "B Input":
-                    formulas.rectB = unifResult;
+                    f.rectB = unifResult;
+                    f.menu.AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
                     break;
                 case "C Input":
-                    formulas.rectC = unifResult;
+                    f.rectC = unifResult;
+                    f.menu.AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
                     break;
                 case "D Input":
-                    formulas.rectD = unifResult;
+                    f.rectD = unifResult;
+                    f.menu.AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
+                    break;
+                
+                case "CX0 Input":
+                    f.circleX0 = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.circleRadius, f.circleRadius, f.circleX0, f.circleY0);
+                    f.menu.AnimateRectLines(
+                        f.circleX0 - f.circleRadius,
+                        f.circleX0 + f.circleRadius,
+                        f.circleY0 - f.circleRadius,
+                        f.circleY0 + f.circleRadius
+                    );
+                    break;
+                case "CY0 Input":
+                    f.circleY0 = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.circleRadius, f.circleRadius, f.circleX0, f.circleY0);
+                    f.menu.AnimateRectLines(
+                        f.circleX0 - f.circleRadius,
+                        f.circleX0 + f.circleRadius,
+                        f.circleY0 - f.circleRadius,
+                        f.circleY0 + f.circleRadius
+                    );
+                    break;
+                case "R Input":
+                    f.circleRadius = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.circleRadius, f.circleRadius, f.circleX0, f.circleY0);
+                    f.menu.AnimateRectLines(
+                        f.circleX0 - f.circleRadius,
+                        f.circleX0 + f.circleRadius,
+                        f.circleY0 - f.circleRadius,
+                        f.circleY0 + f.circleRadius
+                    );
+                    break;
+                
+                case "EX0 Input":
+                    f.ellipseX0 = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
+                    f.menu.AnimateRectLines(
+                        f.ellipseX0 - f.ellipseA,
+                        f.ellipseX0 + f.ellipseA,
+                        f.ellipseY0 - f.ellipseB,
+                        f.ellipseY0 + f.ellipseB
+                    );
+                    break;
+                case "EY0 Input":
+                    f.ellipseY0 = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
+                    f.menu.AnimateRectLines(
+                        f.ellipseX0 - f.ellipseA,
+                        f.ellipseX0 + f.ellipseA,
+                        f.ellipseY0 - f.ellipseB,
+                        f.ellipseY0 + f.ellipseB
+                    );
+                    break;
+                case "EllipseA Input":
+                    f.ellipseA = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
+                    f.menu.AnimateRectLines(
+                        f.ellipseX0 - f.ellipseA,
+                        f.ellipseX0 + f.ellipseA,
+                        f.ellipseY0 - f.ellipseB,
+                        f.ellipseY0 + f.ellipseB
+                    );
+                    break;
+                case "EllipseB Input":
+                    f.ellipseB = unifIntervalResult;
+                    
+                    f.circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
+                    f.menu.AnimateRectLines(
+                        f.ellipseX0 - f.ellipseA,
+                        f.ellipseX0 + f.ellipseA,
+                        f.ellipseY0 - f.ellipseB,
+                        f.ellipseY0 + f.ellipseB
+                    );
                     break;
             }
         }
@@ -198,8 +311,8 @@ public class InputSanitizer : MonoBehaviour
         {
             unifNMValueN.text = string.Empty;
             unifNMValueM.text = string.Empty;
-            formulas.unifNMValueN = 0;
-            formulas.unifNMValueM = 10;
+            f.unifNMValueN = 0;
+            f.unifNMValueM = 10;
         }
     }
 
@@ -213,8 +326,8 @@ public class InputSanitizer : MonoBehaviour
         {
             unifNMValueN.text = string.Empty;
             unifNMValueM.text = string.Empty;
-            formulas.unifStartA = 0;
-            formulas.unifEndB = 10;
+            f.unifStartA = 0;
+            f.unifEndB = 10;
         }
     }
 }

@@ -20,6 +20,8 @@ public class MenuHandler : MonoBehaviour
     [Header("Animation variables")]
     [SerializeField] private float animationDuration = 0.5f;
     [SerializeField] private CameraHandler cameraScroller;
+    [SerializeField] private Material lineMaterial;
+    [SerializeField] private CircleDrawer circleDrawer;
 
     [Header("Other canvas")] 
     [SerializeField] private GameObject graphCanvas;
@@ -82,11 +84,12 @@ public class MenuHandler : MonoBehaviour
         SetLineMaterials();
         SetLineParents();
         SetLineWidth();
-        SetLineColor();
         
         InitBernoulliDistribution();
     }
     
+    // the disablerect() function needs to be called only in the normal and bern functions 
+    // because they act as templates for the rest of the distributions/simulations
     public void InitNormalDistribution()
     {
         graphHandler.xAxisMaxExtent = xMaxNormal;
@@ -113,10 +116,11 @@ public class MenuHandler : MonoBehaviour
         histogramGraphCanvas.SetActive(true);
         
         graphHandler.ResetGraph();
-        graphHandler.ViewPlots();
+        graphHandler.ViewPlotsNormal();
 
         graphHandler.CurrentDistribution = graphHandler.formulas.NormalDistribution;
         EnableCorrectCanvas("Normal");
+        DisableRectLines();
     }
     
     public void InitBernoulliDistribution()
@@ -146,9 +150,10 @@ public class MenuHandler : MonoBehaviour
         
         graphHandler.ResetGraph();
         graphHandler.ViewHistogram();
-        
         graphHandler.CurrentDistribution = graphHandler.formulas.BernoulliDistribution;
+        
         EnableCorrectCanvas("Bernoulli");
+        DisableRectLines();
     }
 
     public void InitUniformDistribution0ToN()
@@ -175,11 +180,11 @@ public class MenuHandler : MonoBehaviour
         histogramHandler.heightMultiplier = histogramHeightMultiplierNormal;
         histogramGraphCanvas.SetActive(false);
         
+        EnableCorrectCanvas("Uniform[ab)");
+        
         graphHandler.ResetGraph();
         graphHandler.ViewHistogram();
         graphHandler.CurrentDistribution = graphHandler.formulas.UniformDistributionInterval;
-        
-        EnableCorrectCanvas("Uniform[ab)");
     }
 
     public void InitBinomialDistribution()
@@ -216,27 +221,70 @@ public class MenuHandler : MonoBehaviour
 
     public void InitRectangleSimulation()
     {
+        Formulas f = graphHandler.formulas;
+        
         InitBernoulliDistribution();
         EnableCorrectCanvas("Rectangle");
 
-        AnimateRectLines();
-        
-        histogramHandler.gameObject.SetActive(false);
-        graphHandler.distributionPlotCanvasImage.gameObject.SetActive(true);
-        
+        AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
+
+        graphHandler.ViewHistogram();
+        graphHandler.ViewPlotsSimulation();
         graphHandler.CurrentDistribution = graphHandler.formulas.RectangleSimulation;
     }
 
-    private void AnimateRectLines()
+    public void InitCircleSimulation()
     {
         Formulas f = graphHandler.formulas;
+        
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Circle");
+        
+        circleDrawer.gameObject.SetActive(true);
+        circleDrawer.DrawCircle(f.circleRadius, f.circleRadius, f.circleX0, f.circleY0);
+        AnimateRectLines(
+            f.circleX0 - f.circleRadius,
+            f.circleX0 + f.circleRadius,
+            f.circleY0 - f.circleRadius,
+            f.circleY0 + f.circleRadius
+        );
+        
+        graphHandler.ViewHistogram();
+        graphHandler.ViewPlotsSimulation();
+        graphHandler.CurrentDistribution = graphHandler.formulas.CircleSimulation;
+    }
+
+    public void InitEllipseSimulation()
+    {
+        Formulas f = graphHandler.formulas;
+        
+        InitBernoulliDistribution();
+        EnableCorrectCanvas("Ellipse");
+        
+        circleDrawer.gameObject.SetActive(true);
+        circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
+        AnimateRectLines(
+            f.ellipseX0 - f.ellipseA,
+            f.ellipseX0 + f.ellipseA,
+            f.ellipseY0 - f.ellipseB,
+            f.ellipseY0 + f.ellipseB
+        );
+        
+        graphHandler.ViewHistogram();
+        graphHandler.ViewPlotsSimulation();
+        graphHandler.CurrentDistribution = graphHandler.formulas.EllipseSimulation;
+    }
+
+    public void AnimateRectLines(float rectA, float rectB, float rectC, float rectD)
+    {
         float offset = lineWidthBern / 2;
+        EnableRectLines();
         
-        graphHandler.AnimateXAxis(_bottomLine, f.rectA - offset, f.rectB + offset, f.rectC);
-        graphHandler.AnimateXAxis(_topLine, f.rectA - offset, f.rectB + offset, f.rectD);
+        graphHandler.AnimateXAxis(_bottomLine, rectA - offset, rectB + offset, rectC);
+        graphHandler.AnimateXAxis(_topLine, rectA - offset, rectB + offset, rectD);
         
-        graphHandler.AnimateYAxis(_leftLine, f.rectC - offset, f.rectD + offset, f.rectA);
-        graphHandler.AnimateYAxis(_rightLine, f.rectC - offset, f.rectD + offset, f.rectB);
+        graphHandler.AnimateYAxis(_leftLine, rectC - offset, rectD + offset, rectA);
+        graphHandler.AnimateYAxis(_rightLine, rectC - offset, rectD + offset, rectB);
     }
 
     private void CreateLines()
@@ -249,10 +297,10 @@ public class MenuHandler : MonoBehaviour
 
     private void SetLineMaterials()
     {
-        _bottomLine.material = graphHandler.lineMaterial;
-        _topLine.material = graphHandler.lineMaterial;
-        _leftLine.material = graphHandler.lineMaterial;
-        _rightLine.material = graphHandler.lineMaterial;
+        _bottomLine.material = lineMaterial;
+        _topLine.material = lineMaterial;
+        _leftLine.material = lineMaterial;
+        _rightLine.material = lineMaterial;
     }
 
     private void SetLineParents()
@@ -273,12 +321,20 @@ public class MenuHandler : MonoBehaviour
         _rightLine.startWidth = _rightLine.endWidth = lineWidthBern;
     }
 
-    private void SetLineColor()
+    private void DisableRectLines()
     {
-        _bottomLine.startColor = _bottomLine.endColor = Color.grey;
-        _topLine.startColor = _topLine.endColor = Color.grey;
-        _leftLine.startColor = _leftLine.endColor = Color.grey;
-        _rightLine.startColor = _rightLine.endColor = Color.grey;
+        _bottomLine.gameObject.SetActive(false);
+        _topLine.gameObject.SetActive(false);
+        _leftLine.gameObject.SetActive(false);
+        _rightLine.gameObject.SetActive(false);
+    }
+
+    private void EnableRectLines()
+    {
+        _bottomLine.gameObject.SetActive(true);
+        _topLine.gameObject.SetActive(true);
+        _leftLine.gameObject.SetActive(true);
+        _rightLine.gameObject.SetActive(true);
     }
     
     private void SetAxisWidth(LineRenderer line, float width)

@@ -8,7 +8,8 @@ using Random = UnityEngine.Random;
 public class Formulas : MonoBehaviour
 {
     [SerializeField] public GraphHandler graph;
-    [SerializeField] private MenuHandler menu;
+    [SerializeField] public MenuHandler menu;
+    [SerializeField] public CircleDrawer circleDrawer;
 
     // bernoulli
     public float bernProbabilityValue = 0.5f;
@@ -42,6 +43,17 @@ public class Formulas : MonoBehaviour
     public float rectB = 2;
     public float rectC = -1;
     public float rectD = 1;
+    
+    // circle simulation
+    public float circleRadius = 3;
+    public float circleX0 = 0;
+    public float circleY0 = 0;
+    
+    // ellipse simulation
+    public float ellipseA = 1;
+    public float ellipseB = 1;
+    public float ellipseX0 = 0;
+    public float ellipseY0 = 0;
     
     // TODO: FIX THIS SHIT
     private double[] Urand(int n)
@@ -163,6 +175,38 @@ public class Formulas : MonoBehaviour
         float x = rectA + (rectB - rectA) * u1;
         float y = rectC + (rectD - rectC) * u2;
         
+        return new Vector2(x, y);
+    }
+
+    public Vector2 CircleSimulation()
+    {
+        float x, y;
+        do
+        {
+            float u1 = Random.value;
+            float u2 = Random.value;
+
+            x = -circleRadius + circleX0 + 2 * circleRadius * u1;
+            y = -circleRadius + circleY0 + 2 * circleRadius * u2;
+        } while (!((x - circleX0) * (x - circleX0) + (y - circleY0) * (y - circleY0) <= circleRadius * circleRadius));
+        
+        return new Vector2(x, y);
+    }
+
+    public Vector2 EllipseSimulation()
+    {
+        float x, y;
+        do
+        {
+            float u1 = Random.value;
+            float u2 = Random.value;
+
+            x = ellipseX0 - ellipseA + 2 * ellipseA * u1;
+            y = ellipseY0 - ellipseB + 2 * ellipseB * u2;
+        } 
+        while (!(((x - ellipseX0) * (x - ellipseX0)) / (ellipseA * ellipseA) + 
+               ((y - ellipseY0) * (y - ellipseY0)) / (ellipseB * ellipseB) <= 1f));
+
         return new Vector2(x, y);
     }
 }

@@ -21,7 +21,7 @@ public class HistogramHandler : MonoBehaviour
 
         if (!graphComponent.isHistogramSelected)
         {
-            gameObject.SetActive(false);    
+            gameObject.SetActive(false);
         }
     }
 

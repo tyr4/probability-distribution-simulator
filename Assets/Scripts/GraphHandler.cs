@@ -20,6 +20,7 @@ public class GraphHandler : MonoBehaviour
     [SerializeField] public float yArrowOffset = 5f;
     [SerializeField] private Sprite circleSprite;
     [SerializeField] public GameObject distributionPlotCanvasImage;
+    [SerializeField] public GameObject simulationPlotCanvasImage;
     [SerializeField] private Canvas distributionPlotCanvasParent;
 
     [Header("Animation settings")] 
@@ -39,7 +40,8 @@ public class GraphHandler : MonoBehaviour
 
     [Header("Formulas")] 
     [SerializeField] public Formulas formulas;
-    [SerializeField] private RawImage image;
+    [SerializeField] private RawImage imageDistribution;
+    [SerializeField] private RawImage imageSimulation;
     
     [Header("Plot slider")]
     [SerializeField] private Slider plotSlider;
@@ -59,12 +61,15 @@ public class GraphHandler : MonoBehaviour
     private GameObject _yAxisGameObj;
     
     public List<Vector2> points = new List<Vector2>();
-    private Texture2D _texture;
+    private Texture2D _textureDistribution;
+    private Texture2D _textureSimulation;
     
     // private float _probabilityPlaceholderValue = 0.5f;
-    private static int _textureSize = 512;
+    private static int _textureDistributionSize = 512;
+    private static int _textureSimulationSize = 3136;
     private int _totalPlottedNumber;
     public bool isHistogramSelected;
+    public bool isSimulationCanvasSelected;
     
     public void Awake()
     {
@@ -222,18 +227,14 @@ public class GraphHandler : MonoBehaviour
 
     private void InitGraph()
     {
-        _texture = new Texture2D(_textureSize, _textureSize, TextureFormat.RGBA32, false);
-        
-        Color[] clearPixels = new Color[_textureSize * _textureSize];
-        for (int i = 0; i < clearPixels.Length; i++)
-            clearPixels[i] = new Color(0, 0, 0, 0);
-        
-        _texture.SetPixels(clearPixels);
-        _texture.Apply();
-        image.texture = _texture;
-        if (!isHistogramSelected)
-            image.gameObject.SetActive(true);
+        _textureDistribution = InitTexture(_textureDistribution, imageDistribution, _textureDistributionSize);
+        _textureSimulation = InitTexture(_textureSimulation, imageSimulation, _textureSimulationSize);
 
+        if (!isHistogramSelected && !isSimulationCanvasSelected)
+        {
+            imageDistribution.gameObject.SetActive(true);
+        }
+        
         StopAllCoroutines();
         CleanAxisPoints();
 
@@ -241,9 +242,24 @@ public class GraphHandler : MonoBehaviour
         AnimateYAxis(yAxis, -yAxisMaxExtent, yAxisMaxExtent, 0);
         StartCoroutine(AnimateXAxisPoints());
         StartCoroutine(AnimateYAxisPoints());
-
-        // Callback distributionFunctionCallback = DistributionFunction;
+        
         histogram.Start();
+    }
+
+    private Texture2D InitTexture(Texture2D texture, RawImage image, int textureSize)
+    {
+        texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
+        
+        Color[] clearPixels = new Color[textureSize * textureSize];
+        for (int i = 0; i < clearPixels.Length; i++)
+            clearPixels[i] = new Color(0, 0, 0, 0);
+        
+        texture.SetPixels(clearPixels);
+        texture.Apply();
+        
+        image.texture = texture;
+
+        return texture;
     }
     
     public void ResetGraph()
@@ -273,9 +289,16 @@ public class GraphHandler : MonoBehaviour
             
             points.Add(pos);
 
-            int x = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.x) * (_textureSize - 1));
-            int y = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.y) * (_textureSize - 1));
-            _texture.SetPixel(x, y, Color.red);
+            int xDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.x) * (_textureDistributionSize - 1));
+            int yDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.y) * (_textureDistributionSize - 1));
+            _textureDistribution.SetPixel(xDistribution, yDistribution, Color.red);
+
+            if (isSimulationCanvasSelected)
+            {
+                int xSimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.x) * (_textureSimulationSize - 1));
+                int ySimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.y) * (_textureSimulationSize - 1));
+                _textureSimulation.SetPixel(xSimulation, ySimulation, Color.red);
+            }
             
             float rangeMin = -xAxisMaxExtent;
             float rangeMax = xAxisMaxExtent;
@@ -288,7 +311,8 @@ public class GraphHandler : MonoBehaviour
             
             if (i % (pointsToPlot / 100) == 0)
             {
-                _texture.Apply();
+                _textureDistribution.Apply();
+                _textureSimulation.Apply();
                 totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber + i}";
                 
                 histogram.UpdateHistogramBars(points);
@@ -297,8 +321,11 @@ public class GraphHandler : MonoBehaviour
             }
         }
 
-        _texture.Apply();
-        image.texture = _texture;
+        _textureDistribution.Apply();
+        _textureSimulation.Apply();
+        
+        imageDistribution.texture = _textureDistribution;
+        imageSimulation.texture = _textureSimulation;
         
         _totalPlottedNumber += pointsToPlot;
         totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber}";
@@ -311,11 +338,12 @@ public class GraphHandler : MonoBehaviour
         plotSliderText.text = $"Points to simulate: {plotSlider.value}";
     }
 
-    public void ViewPlots()
+    public void ViewPlotsNormal()
     {
         if (isHistogramSelected)
         {
             distributionPlotCanvasImage.SetActive(true);
+            simulationPlotCanvasImage.SetActive(false);
             histogram.gameObject.SetActive(false);
 
             var width = selectedButtonArrow.rectTransform.rect.width;
@@ -323,7 +351,18 @@ public class GraphHandler : MonoBehaviour
             selectedButtonArrow.rectTransform.sizeDelta = new Vector2(width, height + 357f);
 
             isHistogramSelected = false;
+            isSimulationCanvasSelected = false;
         }
+    }
+
+    public void ViewPlotsSimulation()
+    {
+        simulationPlotCanvasImage.SetActive(true);
+        distributionPlotCanvasImage.SetActive(false);
+        histogram.gameObject.SetActive(false);
+        
+        isHistogramSelected = false;
+        isSimulationCanvasSelected = true;
     }
 
     public void ViewHistogram()
@@ -331,6 +370,7 @@ public class GraphHandler : MonoBehaviour
         if (!isHistogramSelected)
         {
             distributionPlotCanvasImage.SetActive(false);
+            simulationPlotCanvasImage.SetActive(false);
             histogram.gameObject.SetActive(true);
             
             var width = selectedButtonArrow.rectTransform.rect.width;
