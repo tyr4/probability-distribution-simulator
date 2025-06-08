@@ -21,6 +21,8 @@ public class CameraHandler : MonoBehaviour
         
         _cameraStep = _initialCameraSize / maxSteps;
         // _canvasStep = _initialCanvasSize / maxSteps;
+        
+        Screen.SetResolution(3840, 2160, true); // fullscreen true/false
     }
 
     private void Update()

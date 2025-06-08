@@ -61,7 +61,7 @@ public class MenuHandler : MonoBehaviour
     [SerializeField] private float lineWidthBern = 0.1f;
     
     private bool _isOpenSideMenu = false;
-    private float _boxWidth;
+    private float _boxWorldWidth;
     private float _initialBoxPosition;
     private float _initialButtonsPosition;
     
@@ -69,15 +69,21 @@ public class MenuHandler : MonoBehaviour
     private LineRenderer _topLine;
     private LineRenderer _leftLine;
     private LineRenderer _rightLine;
+    private GameObject _circleLineRenderer;
     
     
     private void Start()
     {
         RectTransform box = menuButton.transform.GetChild(0) as RectTransform;
         
-        _boxWidth = box.rect.width;
-        _initialBoxPosition = box.rect.position.x;
+        Vector3 worldLeft = box.TransformPoint(new Vector3(box.rect.xMin, 0, 0));
+        Vector3 worldRight = box.TransformPoint(new Vector3(box.rect.xMax, 0, 0));
+        _boxWorldWidth = worldRight.x - worldLeft.x;
+
+        // Store initial world-space X positions
+        _initialBoxPosition = menuButton.transform.GetChild(0).position.x;
         _initialButtonsPosition = menuSideButtons.transform.position.x;
+        _circleLineRenderer = circleDrawer.transform.GetChild(0).gameObject;
 
         // initialize the line renderers for the rectangle simulations
         CreateLines();
@@ -120,6 +126,7 @@ public class MenuHandler : MonoBehaviour
 
         graphHandler.CurrentDistribution = graphHandler.formulas.NormalDistribution;
         EnableCorrectCanvas("Normal");
+        _circleLineRenderer.SetActive(false);
         DisableRectLines();
     }
     
@@ -153,6 +160,7 @@ public class MenuHandler : MonoBehaviour
         graphHandler.CurrentDistribution = graphHandler.formulas.BernoulliDistribution;
         
         EnableCorrectCanvas("Bernoulli");
+        _circleLineRenderer.SetActive(false);
         DisableRectLines();
     }
 
@@ -240,7 +248,7 @@ public class MenuHandler : MonoBehaviour
         InitBernoulliDistribution();
         EnableCorrectCanvas("Circle");
         
-        circleDrawer.gameObject.SetActive(true);
+        _circleLineRenderer.SetActive(true);
         circleDrawer.DrawCircle(f.circleRadius, f.circleRadius, f.circleX0, f.circleY0);
         AnimateRectLines(
             f.circleX0 - f.circleRadius,
@@ -261,7 +269,7 @@ public class MenuHandler : MonoBehaviour
         InitBernoulliDistribution();
         EnableCorrectCanvas("Ellipse");
         
-        circleDrawer.gameObject.SetActive(true);
+        _circleLineRenderer.SetActive(true);
         circleDrawer.DrawCircle(f.ellipseA, f.ellipseB, f.ellipseX0, f.ellipseY0);
         AnimateRectLines(
             f.ellipseX0 - f.ellipseA,
@@ -363,11 +371,11 @@ public class MenuHandler : MonoBehaviour
 
         if (!_isOpenSideMenu)
         {
-            AnimateBarXAxis(menuButtonChild, currentMenuPos, currentMenuPos + _boxWidth, animationDuration);
-            AnimateBarXAxis(menuSideButtons, currentSidePos, currentSidePos + _boxWidth, animationDuration);
-            
+            AnimateBarXAxis(menuButtonChild, currentMenuPos, currentMenuPos + _boxWorldWidth, animationDuration);
+            AnimateBarXAxis(menuSideButtons, currentSidePos, currentSidePos + _boxWorldWidth, animationDuration);
+
             DisableButtons();
-            
+
             _isOpenSideMenu = true;
             cameraScroller.enabled = false;
         }
@@ -376,16 +384,12 @@ public class MenuHandler : MonoBehaviour
             AnimateBarXAxis(menuButtonChild, currentMenuPos, _initialBoxPosition, animationDuration);
             AnimateBarXAxis(menuSideButtons, currentSidePos, _initialButtonsPosition, animationDuration);
 
-            // this waits until the animation completes to avoid overlap
             StartCoroutine(EnableButtons());
-            
+
             _isOpenSideMenu = false;
             cameraScroller.enabled = true;
         }
-        
-        // deselect all buttons because the unity buttons are dumb
-        // and it doesnt support partial deselection (visual purposes)
-        
+
         EventSystem.current.SetSelectedGameObject(null);
     }
 
@@ -397,7 +401,7 @@ public class MenuHandler : MonoBehaviour
             obj.transform.position = new Vector3(start, obj.transform.position.y, 0);
         }, end, duration).SetEase(Ease.Linear);
     }
-
+//
     private IEnumerator EnableButtons()
     {
         yield return new WaitForSeconds(animationDuration);
