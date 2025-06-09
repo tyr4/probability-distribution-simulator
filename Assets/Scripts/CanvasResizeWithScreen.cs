@@ -17,8 +17,7 @@ public class CanvasResizeWithScreen : MonoBehaviour
     {
         _resizeRectValue = plotCanvasScaler.referenceResolution.x / rectPlotCanvas.rect.width;
         _resizeNormalValue = plotCanvasScaler.referenceResolution.x / normalPlotCanvas.rect.width;
-            
-            
+        
         _screenSizeX = Screen.width;
         _screenSizeY = Screen.height;
         

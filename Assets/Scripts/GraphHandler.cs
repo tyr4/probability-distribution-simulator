@@ -305,7 +305,7 @@ public class GraphHandler : MonoBehaviour
             float range = rangeMax - rangeMin;
             float binWidth = range / histogram.binSize;
 
-            int index = Mathf.Clamp(Mathf.RoundToInt((pos.x - rangeMin) / binWidth), 0, histogram.binSize - 1);
+            int index = Mathf.Clamp(Mathf.FloorToInt((pos.x - rangeMin) / binWidth), 0, histogram.binSize - 1);
 
             histogram.binFrequency[index]++;
             
