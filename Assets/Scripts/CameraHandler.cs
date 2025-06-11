@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraHandler : MonoBehaviour
 {
@@ -10,38 +11,68 @@ public class CameraHandler : MonoBehaviour
     [SerializeField] private float maxSteps = 20f;
 
     private float _initialCameraSize;
-    // private float _initialCanvasSize;
-    
     private float _cameraStep;
-    // private float _canvasStep;
+    private Vector3 _initialCameraPosition;
+    private bool _isDragging;
+    private Vector3 _dragStartPosition;
+    
     private void Start()
     {
         _initialCameraSize = camera.orthographicSize;
-        // _initialCanvasSize = plotCanvas.rect.width;
-        
+        _initialCameraPosition = camera.transform.position;
         _cameraStep = _initialCameraSize / maxSteps;
-        // _canvasStep = _initialCanvasSize / maxSteps;
-        
-        Screen.SetResolution(3840, 2160, true); // fullscreen true/false
     }
 
     private void Update()
     {
-        if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+        HandleZoom();
+        HandleDrag();
+    }
+    
+    private void HandleZoom()
+    {
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+
+        if (scroll > 0f && camera.orthographicSize > minCameraDistance)
         {
-            if (camera.orthographicSize > minCameraDistance)
-            {
-                camera.orthographicSize -= _cameraStep;
-                // plotCanvas.sizeDelta = new Vector2(plotCanvas.sizeDelta.x + _canvasStep, plotCanvas.sizeDelta.y + _canvasStep);
-            }
+            camera.orthographicSize -= _cameraStep;
         }
-        else if (Input.GetAxis("Mouse ScrollWheel") < 0f)
+        else if (scroll < 0f && camera.orthographicSize < maxCameraDistance)
         {
-            if (camera.orthographicSize < maxCameraDistance)
-            {
-                camera.orthographicSize += _cameraStep;
-                // plotCanvas.sizeDelta = new Vector2(plotCanvas.sizeDelta.x - _canvasStep, plotCanvas.sizeDelta.y - _canvasStep);
-            }
+            camera.orthographicSize += _cameraStep;
         }
+    }
+    
+    private void HandleDrag()
+    {
+        if (Input.GetMouseButtonDown(0) && !IsPointerOverUI())
+        {
+            _isDragging = true;
+            _dragStartPosition = camera.ScreenToWorldPoint(Input.mousePosition);
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            _isDragging = false;
+        }
+
+        if (_isDragging)
+        {
+            Vector3 currentMouseWorldPos = camera.ScreenToWorldPoint(Input.mousePosition);
+            Vector3 difference = _dragStartPosition - currentMouseWorldPos;
+
+            camera.transform.position += difference;
+        }
+    }
+
+    public void ResetCamera()
+    {
+        camera.orthographicSize = _initialCameraSize;
+        camera.transform.position = _initialCameraPosition;
+    }
+    
+    private bool IsPointerOverUI()
+    {
+        return EventSystem.current && EventSystem.current.IsPointerOverGameObject();
     }
 }

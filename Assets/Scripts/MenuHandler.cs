@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class MenuHandler : MonoBehaviour
 {
@@ -70,7 +71,7 @@ public class MenuHandler : MonoBehaviour
     private LineRenderer _leftLine;
     private LineRenderer _rightLine;
     private GameObject _circleLineRenderer;
-    
+    private Vector3 _initialCameraPosition;
     
     private void Start()
     {
@@ -79,12 +80,13 @@ public class MenuHandler : MonoBehaviour
         Vector3 worldLeft = box.TransformPoint(new Vector3(box.rect.xMin, 0, 0));
         Vector3 worldRight = box.TransformPoint(new Vector3(box.rect.xMax, 0, 0));
         _boxWorldWidth = worldRight.x - worldLeft.x;
-
-        // Store initial world-space X positions
+        
         _initialBoxPosition = menuButton.transform.GetChild(0).position.x;
         _initialButtonsPosition = menuSideButtons.transform.position.x;
         _circleLineRenderer = circleDrawer.transform.GetChild(0).gameObject;
 
+        _initialCameraPosition = camera.transform.position;
+        
         // initialize the line renderers for the rectangle simulations
         CreateLines();
         SetLineMaterials();
@@ -118,6 +120,7 @@ public class MenuHandler : MonoBehaviour
         SetAxisArrowFont(yArrow, 12f, 8.5f);
 
         camera.orthographicSize = graphHandler.yAxisMaxExtent + cameraOffsetNormal;
+        camera.transform.position = _initialCameraPosition;
         origin.fontSize = originSizeNormal;
         histogramGraphCanvas.SetActive(true);
         
@@ -152,6 +155,7 @@ public class MenuHandler : MonoBehaviour
         SetAxisArrowFont(yArrow, 24f, 17f);
         
         camera.orthographicSize = graphHandler.yAxisMaxExtent + cameraOffsetBern;
+        camera.transform.position = _initialCameraPosition;
         origin.fontSize = originSizeBern;
         histogramGraphCanvas.SetActive(false);
         
@@ -235,8 +239,7 @@ public class MenuHandler : MonoBehaviour
         EnableCorrectCanvas("Rectangle");
 
         AnimateRectLines(f.rectA, f.rectB, f.rectC, f.rectD);
-
-        graphHandler.ViewHistogram();
+        
         graphHandler.ViewPlotsSimulation();
         graphHandler.CurrentDistribution = graphHandler.formulas.RectangleSimulation;
     }
@@ -257,7 +260,6 @@ public class MenuHandler : MonoBehaviour
             f.circleY0 + f.circleRadius
         );
         
-        graphHandler.ViewHistogram();
         graphHandler.ViewPlotsSimulation();
         graphHandler.CurrentDistribution = graphHandler.formulas.CircleSimulation;
     }
@@ -278,7 +280,6 @@ public class MenuHandler : MonoBehaviour
             f.ellipseY0 + f.ellipseB
         );
         
-        graphHandler.ViewHistogram();
         graphHandler.ViewPlotsSimulation();
         graphHandler.CurrentDistribution = graphHandler.formulas.EllipseSimulation;
     }
@@ -401,7 +402,7 @@ public class MenuHandler : MonoBehaviour
             obj.transform.position = new Vector3(start, obj.transform.position.y, 0);
         }, end, duration).SetEase(Ease.Linear);
     }
-//
+
     private IEnumerator EnableButtons()
     {
         yield return new WaitForSeconds(animationDuration);
@@ -431,5 +432,10 @@ public class MenuHandler : MonoBehaviour
                 obj.SetActive(false);
             }
         }
+    }
+
+    public void LoadTitleScreenScene()
+    {
+        SceneManager.LoadScene("Title Screen");
     }
 }

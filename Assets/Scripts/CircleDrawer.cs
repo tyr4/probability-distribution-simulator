@@ -13,7 +13,6 @@ public class CircleDrawer : MonoBehaviour
     private void Start()
     {
         line.positionCount = segments + 1;
-        Debug.Log("da sefu");
         line.material = lineMaterial;
         line.loop = loop;
         line.startWidth = line.endWidth = 0.1f;

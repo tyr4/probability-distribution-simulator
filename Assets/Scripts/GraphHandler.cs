@@ -340,7 +340,7 @@ public class GraphHandler : MonoBehaviour
 
     public void ViewPlotsNormal()
     {
-        if (isHistogramSelected)
+        if (isHistogramSelected && !isSimulationCanvasSelected)
         {
             distributionPlotCanvasImage.SetActive(true);
             simulationPlotCanvasImage.SetActive(false);
@@ -359,10 +359,17 @@ public class GraphHandler : MonoBehaviour
     {
         simulationPlotCanvasImage.SetActive(true);
         distributionPlotCanvasImage.SetActive(false);
-        histogram.gameObject.SetActive(false);
         
         isHistogramSelected = false;
         isSimulationCanvasSelected = true;
+        
+        if (!isHistogramSelected)
+        {
+            var width = selectedButtonArrow.rectTransform.rect.width;
+            var height = selectedButtonArrow.rectTransform.rect.height;
+            selectedButtonArrow.rectTransform.sizeDelta = new Vector2(width, height + 357f);
+            histogram.gameObject.SetActive(false);
+        }
     }
 
     public void ViewHistogram()
@@ -378,6 +385,7 @@ public class GraphHandler : MonoBehaviour
             selectedButtonArrow.rectTransform.sizeDelta = new Vector2(width, height - 357f);
             
             isHistogramSelected = true;
+            isSimulationCanvasSelected = false;
         }
     }
 
