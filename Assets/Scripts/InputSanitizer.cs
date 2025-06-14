@@ -94,17 +94,10 @@ public class InputSanitizer : MonoBehaviour
                     break;
                 
                 case "NUnif0 Input":
-                    unifResult = Convert.ToInt32(input);
-                    unifResult = Mathf.Min(unifResult, (int)(f.graph.xAxisMaxExtent) - 1);
-                    unifResult = Mathf.Max(unifResult, 0);
-                    
-                    inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
-                    break;
-                
                 case "NBin Input":
                     unifResult = Convert.ToInt32(input);
                     unifResult = Mathf.Min(unifResult, (int)(f.graph.xAxisMaxExtent) - 1);
-                    unifResult = Mathf.Max(unifResult, -(int)(f.graph.xAxisMaxExtent) + 1);
+                    unifResult = Mathf.Max(unifResult, 0);
                     
                     inputField.SetTextWithoutNotify(Convert.ToString(unifResult, CultureInfo.InvariantCulture));
                     break;

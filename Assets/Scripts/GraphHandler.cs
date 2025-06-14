@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using DG.Tweening;
 using UnityEngine;
 using TMPro;
@@ -22,6 +24,7 @@ public class GraphHandler : MonoBehaviour
     [SerializeField] public GameObject distributionPlotCanvasImage;
     [SerializeField] public GameObject simulationPlotCanvasImage;
     [SerializeField] private Canvas distributionPlotCanvasParent;
+    [SerializeField] private CanvasResizeWithScreen resizeScript;
 
     [Header("Animation settings")] 
     [SerializeField] public float xAxisMaxExtent = 28f;
@@ -37,6 +40,7 @@ public class GraphHandler : MonoBehaviour
     [Header("Text settings")] 
     [SerializeField] public float fontSize = 8f;
     [SerializeField] public float pointPosOffset = -1f;
+    [SerializeField] private TMP_InputField inputField;
 
     [Header("Formulas")] 
     [SerializeField] public Formulas formulas;
@@ -65,8 +69,8 @@ public class GraphHandler : MonoBehaviour
     private Texture2D _textureSimulation;
     
     // private float _probabilityPlaceholderValue = 0.5f;
-    private static int _textureDistributionSize = 512;
-    private static int _textureSimulationSize = 3136;
+    private int _textureDistributionSize;
+    private int _textureSimulationSize;
     private int _totalPlottedNumber;
     public bool isHistogramSelected;
     public bool isSimulationCanvasSelected;
@@ -75,9 +79,19 @@ public class GraphHandler : MonoBehaviour
     {
         _xAxisGameObj = xAxis.transform.gameObject;
         _yAxisGameObj = yAxis.transform.gameObject;
-        plotSliderText.text = $"Points to simulate: {plotSlider.value}";
+        plotSliderText.text = $"Points to simulate: ";
         
         distributionPlotCanvasParent.renderMode = RenderMode.WorldSpace;
+        
+        Vector2 sizes = resizeScript.InitCanvasSize();
+        _textureDistributionSize = (int)sizes.x;
+        _textureSimulationSize = (int)sizes.y;
+        
+        if (inputField != null)
+        {
+            inputField.onValueChanged.AddListener(OnValueChangedPoints);
+            inputField.onEndEdit.AddListener(OnEndEditPoints);
+        }
     }
     
     
@@ -227,8 +241,8 @@ public class GraphHandler : MonoBehaviour
 
     private void InitGraph()
     {
-        _textureDistribution = InitTexture(_textureDistribution, imageDistribution, _textureDistributionSize);
-        _textureSimulation = InitTexture(_textureSimulation, imageSimulation, _textureSimulationSize);
+        _textureDistribution = InitTexture(imageDistribution, _textureDistributionSize);
+        _textureSimulation = InitTexture(imageSimulation, _textureSimulationSize);
 
         if (!isHistogramSelected && !isSimulationCanvasSelected)
         {
@@ -246,9 +260,9 @@ public class GraphHandler : MonoBehaviour
         histogram.Start();
     }
 
-    private Texture2D InitTexture(Texture2D texture, RawImage image, int textureSize)
+    private Texture2D InitTexture(RawImage image, int textureSize)
     {
-        texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false);
         
         Color[] clearPixels = new Color[textureSize * textureSize];
         for (int i = 0; i < clearPixels.Length; i++)
@@ -280,62 +294,74 @@ public class GraphHandler : MonoBehaviour
 
     private IEnumerator PlotAndDrawCoroutine()
     {
-        int pointsToPlot = (int)plotSlider.value;
-        
+        int pointsToPlot = Convert.ToInt32(inputField.text);
+        int binMinus1 = histogram.binSize - 1;
+        float distributionSizeMinus1 = _textureDistributionSize - 1;
+        float simulationSizeMinus1 = _textureSimulationSize - 1;
+
         for (int i = 1; i <= pointsToPlot; i++)
         {
             // assumes (0, 0) if the function doesnt exist
             Vector2 pos = CurrentDistribution?.Invoke() ?? Vector2.zero;
-            
+
             points.Add(pos);
 
-            int xDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.x) * (_textureDistributionSize - 1));
-            int yDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.y) * (_textureDistributionSize - 1));
-            _textureDistribution.SetPixel(xDistribution, yDistribution, Color.red);
-
+            // this is done to prevent lag, as to not apply both textures at once
+            // rectangle/circle/ellispe
             if (isSimulationCanvasSelected)
             {
-                int xSimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.x) * (_textureSimulationSize - 1));
-                int ySimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.y) * (_textureSimulationSize - 1));
+                int xSimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.x) * simulationSizeMinus1);
+                int ySimulation = Mathf.RoundToInt(Mathf.InverseLerp(-29f, 29f, pos.y) * simulationSizeMinus1);
                 _textureSimulation.SetPixel(xSimulation, ySimulation, Color.red);
             }
-            
+
+            // normal distribution
+            else
+            {
+                int xDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.x) * distributionSizeMinus1);
+                int yDistribution = Mathf.RoundToInt(Mathf.InverseLerp(-5.25f, 5.25f, pos.y) * distributionSizeMinus1);
+                _textureDistribution.SetPixel(xDistribution, yDistribution, Color.red);
+            }
+
             float rangeMin = -xAxisMaxExtent;
             float rangeMax = xAxisMaxExtent;
             float range = rangeMax - rangeMin;
             float binWidth = range / histogram.binSize;
 
-            int index = Mathf.Clamp(Mathf.FloorToInt((pos.x - rangeMin) / binWidth), 0, histogram.binSize - 1);
+            int index = Mathf.Clamp(Mathf.FloorToInt((pos.x - rangeMin) / binWidth), 0, binMinus1);
 
             histogram.binFrequency[index]++;
-            
-            if (i % (pointsToPlot / 100) == 0)
+
+            if (pointsToPlot < 100 || i % (pointsToPlot / 100) == 0)
             {
-                _textureDistribution.Apply();
-                _textureSimulation.Apply();
+                if (isSimulationCanvasSelected) _textureSimulation.Apply();
+                else _textureDistribution.Apply();
+
                 totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber + i}";
-                
+
                 histogram.UpdateHistogramBars(points);
-                
-                yield return new WaitForFixedUpdate();
+
+                if (pointsToPlot > 100)
+                    yield return new WaitForFixedUpdate();
+                else yield return new WaitForSeconds(1f / pointsToPlot);
             }
         }
 
-        _textureDistribution.Apply();
-        _textureSimulation.Apply();
-        
+        if (isSimulationCanvasSelected) _textureSimulation.Apply();
+        else _textureDistribution.Apply();
+
         imageDistribution.texture = _textureDistribution;
         imageSimulation.texture = _textureSimulation;
-        
+
         _totalPlottedNumber += pointsToPlot;
         totalPlottedText.text = $"Total points simulated: {_totalPlottedNumber}";
-        
+
         histogram.UpdateHistogramBars(points);
     }
 
     public void UpdateSliderTextValue()
     {
-        plotSliderText.text = $"Points to simulate: {plotSlider.value}";
+        inputField.text = $"{plotSlider.value}";
     }
 
     public void ViewPlotsNormal()
@@ -395,5 +421,31 @@ public class GraphHandler : MonoBehaviour
         
         Time.timeScale = value;
         timescaleText.text = $"Timescale: x{value}";
+    }
+
+    private void OnValueChangedPoints(string input)
+    {
+        var patternInteger = @"^(?!-*[0-9]*$).*";
+        var sanitized = Regex.Replace(input, patternInteger, string.Empty);
+
+        inputField.text = $"{sanitized}";
+    }
+
+    private void OnEndEditPoints(string input)
+    {
+        int value = 1000;
+
+        try
+        {
+            value = Math.Max(0, Convert.ToInt32(input));
+            value = Math.Min(value, (int)plotSlider.maxValue);
+        }
+        
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
+        
+        inputField.text = $"{value}";
     }
 }

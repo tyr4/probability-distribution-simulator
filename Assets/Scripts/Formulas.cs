@@ -1,10 +1,5 @@
 using System;
-using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.Serialization;
-using Random = UnityEngine.Random;
 
 public class Formulas : MonoBehaviour
 {
@@ -126,6 +121,7 @@ public class Formulas : MonoBehaviour
     public Vector2 BinomialDistribution()
     {
         int sum = 0;
+        
         for (int i = 0; i < binomialValueN; i++)
         {
             float u = Urand();
@@ -217,4 +213,3 @@ public class Formulas : MonoBehaviour
         return new Vector2(x, y);
     }
 }
-
